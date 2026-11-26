@@ -51,7 +51,7 @@ function login(err){
 function dash(l){
   const items=l.items;
   app.innerHTML='<h1>Developer dashboard</h1><div class="card"><div class="row" style="margin-top:0"><button id="new">Generate new QR</button><button class="g" id="out">Log out</button><span class="mu">'+items.length+' QR codes</span></div><p class="mu" style="margin:10px 0 0">Total logins: <b>'+l.logins+'</b> · Previous login: '+when(l.prevLogin)+'</p></div><div class="card" id="list"></div>';
-  $("new").onclick=async()=>{await call("create",{});start();};
+  $("new").onclick=async()=>{const j=await call("create",{});if(j.id){start();}else{alert("Could not create QR. Error "+j._s+": "+(j.error||j.message||"no details"));}};
   $("out").onclick=()=>{sessionStorage.removeItem("qrtok");login();};
   const list=$("list");if(!items.length)list.textContent="No QR codes yet.";
   items.forEach(it=>{
