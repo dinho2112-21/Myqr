@@ -31,10 +31,10 @@ input{width:100%;padding:12px;border:1px solid #ccd;border-radius:10px;font:inhe
 button,a.b{display:inline-block;margin-top:12px;padding:11px 18px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font:600 1rem system-ui;text-decoration:none;cursor:pointer}
 p{color:#667085}@media(prefers-color-scheme:dark){body{background:#0f1115;color:#eceef3}.c{background:#181b22;border-color:#2a2f3a}input{background:#0f1115;color:#eceef3;border-color:#2a2f3a}}</style></head><body><div class="c">${body}</div></body></html>`;
 
-export default async (req) => {
+const handler = async (req) => {
   const url = new URL(req.url);
   const parts = url.pathname.split("/").filter(Boolean);
-  const store = getStore("qrs");
+  const store = getStore({ name: "qrs", consistency: "strong" });
 
   /* ---- Public QR page: only redirects or asks for the destination. Never touches admin. ---- */
   if (parts[0] === "q") {
@@ -74,7 +74,7 @@ const j=await r.json();if(j.dest)location.replace("/q/${id}");else m.textContent
 
   /* ---- Developer API ---- */
   if (parts[1] === "admin") {
-    const cfg = getStore("config");
+    const cfg = getStore({ name: "config", consistency: "strong" });
     const admin = await cfg.get("admin", { type: "json" });
     const act = parts[2];
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
@@ -134,6 +134,11 @@ const j=await r.json();if(j.dest)location.replace("/q/${id}");else m.textContent
     if (act === "delete") { await store.delete(id); return json({ ok: true }); }
   }
   return json({ error: "not found" }, 404);
+};
+
+export default async (req) => {
+  try { return await handler(req); }
+  catch (e) { return json({ error: "server: " + (e && e.message) }, 500); }
 };
 
 export const config = { path: ["/q/*", "/api/*"] };
