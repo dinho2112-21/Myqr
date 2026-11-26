@@ -4,36 +4,76 @@
 @media(prefers-color-scheme:dark){:root{--bg:#0f1115;--cd:#181b22;--tx:#eceef3;--mu:#98a1b3;--bd:#2a2f3a;--ac:#818cf8}}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px}
 .card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:16px}
-input{padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+input{padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;width:100%;box-sizing:border-box}
 button{padding:10px 16px;border:0;border-radius:10px;background:var(--ac);color:#fff;font-weight:600;cursor:pointer}
 button.g{background:none;color:var(--mu);border:1px solid var(--bd);padding:6px 12px;font-weight:500}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.item{display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--bd)}
-.qr{background:#fff;padding:6px;border-radius:8px;line-height:0;flex:none;height:min-content}.grow{flex:1;min-width:0;word-break:break-all;font-size:.9rem}.mu{color:var(--mu)}</style></head>
+.qr{background:#fff;padding:6px;border-radius:8px;line-height:0;flex:none;height:min-content}.grow{flex:1;min-width:0;word-break:break-all;font-size:.9rem}.mu{color:var(--mu)}.er{color:#c2410c;min-height:1.2em}</style></head>
 <body><main id="app"></main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const app=document.getElementById("app");
-const api=async(p,b)=>{const r=await fetch("/api/admin/"+p,{method:b?"POST":"GET",headers:{"x-admin-token":localStorage.getItem("qrtok")||"","content-type":"application/json"},body:b?JSON.stringify(b):undefined});
-if(r.status===401)throw new Error("auth");return r.json();};
-function login(err){app.innerHTML='<div class="card"><h2>Developer login</h2><input id="p" type="password" placeholder="Admin password"> <button id="b">Log in</button><p style="color:#c2410c">'+(err||"")+'</p></div>';
-document.getElementById("b").onclick=()=>{localStorage.setItem("qrtok",document.getElementById("p").value);load();};}
-async function load(){let items;try{items=await api("list");}catch(e){return login(localStorage.getItem("qrtok")?"Wrong password":"");}
-app.innerHTML='<h1>Developer dashboard</h1><div class="card"><button id="new">Generate new QR</button> <button class="g" id="out">Log out</button> <span class="mu">'+items.length+' total</span></div><div class="card" id="list"></div>';
-document.getElementById("new").onclick=async()=>{await api("create",{});load();};
-document.getElementById("out").onclick=()=>{localStorage.removeItem("qrtok");login();};
-const list=document.getElementById("list");if(!items.length)list.textContent="No QR codes yet.";
-items.forEach(it=>{const link=location.origin+"/q/"+it.id,row=document.createElement("div");row.className="item";
-const box=document.createElement("div");box.className="qr";new QRCode(box,{text:link,width:112,height:112});
-const g=document.createElement("div");g.className="grow";
-g.innerHTML="<b>QR "+it.id+"</b> <span class='mu'>"+(it.dest?"Linked":"Waiting for first scan")+"</span><div class='mu'></div><div class='mu'></div>";
-g.children[2].textContent=it.dest?"Goes to: "+it.dest:"No destination yet";
-g.children[3].textContent=(it.scans||0)+" scans · last scan: "+(it.lastScan?new Date(it.lastScan).toLocaleString():"never");
-const r=document.createElement("div");r.className="row";const inp=document.createElement("input");inp.type="url";inp.value=it.dest||"";inp.placeholder="Set or change destination";inp.style.flex="1";
-const up=document.createElement("button");up.className="g";up.textContent="Update link";up.onclick=async()=>{const j=await api("update",{id:it.id,dest:inp.value});j.ok?load():alert("Invalid link");};
-r.append(inp,up);const r2=document.createElement("div");r2.className="row";
-const dl=document.createElement("button");dl.className="g";dl.textContent="Download PNG";dl.onclick=()=>{const a=document.createElement("a");a.href=box.querySelector("canvas").toDataURL();a.download="qr-"+it.id+".png";a.click();};
-const cp=document.createElement("button");cp.className="g";cp.textContent="Copy link";cp.onclick=()=>navigator.clipboard.writeText(link);
-const rm=document.createElement("button");rm.className="g";rm.textContent="Delete";rm.onclick=async()=>{if(!rm.dataset.c){rm.dataset.c=1;rm.textContent="Tap again to delete";return;}await api("delete",{id:it.id});load();};
-r2.append(dl,cp,rm);g.append(r,r2);row.append(box,g);list.append(row);});}
-load();
+const $=id=>document.getElementById(id);
+const T=()=>sessionStorage.getItem("qrtok")||"";
+const call=async(path,body)=>{
+  const r=await fetch("/api/admin/"+path,{method:body?"POST":"GET",headers:{"x-admin-token":T(),"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
+  let j={};try{j=await r.json();}catch(e){} j._s=r.status;return j;};
+const when=t=>t?new Date(t).toLocaleString():"none yet";
+
+async function start(){
+  const s=await call("status");
+  if(!s.setup)return setup();
+  if(T()){const l=await call("list");if(l.items)return dash(l);}
+  login();
+}
+
+function setup(err){
+  app.innerHTML='<div class="card"><h2>Create your developer password</h2><p class="mu">Do this once. Afterwards this page always asks for it.</p><input id="p1" type="password" placeholder="New password (8+ characters)"><div class="row"><input id="p2" type="password" placeholder="Repeat password"></div><div class="row"><button id="b">Save password</button></div><p class="er">'+(err||"")+'</p></div>';
+  $("b").onclick=async()=>{
+    const a=$("p1").value,b=$("p2").value;
+    if(a.length<8)return setup("Use at least 8 characters");
+    if(a!==b)return setup("Passwords don’t match");
+    const j=await call("setup",{password:a});
+    if(j.token){sessionStorage.setItem("qrtok",j.token);start();}else setup("Could not save the password");
+  };
+}
+
+function login(err){
+  app.innerHTML='<div class="card"><h2>Developer login</h2><input id="p" type="password" placeholder="Password"><div class="row"><button id="b">Log in</button></div><p class="er">'+(err||"")+'</p></div>';
+  const go=async()=>{
+    const j=await call("login",{password:$("p").value});
+    if(j.token){sessionStorage.setItem("qrtok",j.token);start();}
+    else login(j._s===429?"Too many tries. Wait 15 minutes.":"Wrong password");
+  };
+  $("b").onclick=go;$("p").onkeydown=e=>{if(e.key==="Enter")go();};
+}
+
+function dash(l){
+  const items=l.items;
+  app.innerHTML='<h1>Developer dashboard</h1><div class="card"><div class="row" style="margin-top:0"><button id="new">Generate new QR</button><button class="g" id="out">Log out</button><span class="mu">'+items.length+' QR codes</span></div><p class="mu" style="margin:10px 0 0">Total logins: <b>'+l.logins+'</b> · Previous login: '+when(l.prevLogin)+'</p></div><div class="card" id="list"></div>';
+  $("new").onclick=async()=>{await call("create",{});start();};
+  $("out").onclick=()=>{sessionStorage.removeItem("qrtok");login();};
+  const list=$("list");if(!items.length)list.textContent="No QR codes yet.";
+  items.forEach(it=>{
+    const link=location.origin+"/q/"+it.id,row=document.createElement("div");row.className="item";
+    const box=document.createElement("div");box.className="qr";new QRCode(box,{text:link,width:112,height:112});
+    const g=document.createElement("div");g.className="grow";
+    g.innerHTML="<b>QR "+it.id+"</b> <span class='mu'>"+(it.dest?"Linked":"Waiting for first scan")+"</span><div class='mu'></div><div class='mu'></div>";
+    g.children[2].textContent=it.dest?"Goes to: "+it.dest:"No destination yet";
+    g.children[3].textContent=(it.scans||0)+" scans · last scan: "+(it.lastScan?new Date(it.lastScan).toLocaleString():"never");
+    const r=document.createElement("div");r.className="row";
+    const inp=document.createElement("input");inp.type="url";inp.value=it.dest||"";inp.placeholder="Set or change destination";inp.style.flex="1";
+    const up=document.createElement("button");up.className="g";up.textContent="Update link";
+    up.onclick=async()=>{const j=await call("update",{id:it.id,dest:inp.value});j.ok?start():alert("Invalid link");};
+    r.append(inp,up);
+    const r2=document.createElement("div");r2.className="row";
+    const dl=document.createElement("button");dl.className="g";dl.textContent="Download PNG";
+    dl.onclick=()=>{const a=document.createElement("a");a.href=box.querySelector("canvas").toDataURL();a.download="qr-"+it.id+".png";a.click();};
+    const cp=document.createElement("button");cp.className="g";cp.textContent="Copy link";cp.onclick=()=>navigator.clipboard.writeText(link);
+    const rm=document.createElement("button");rm.className="g";rm.textContent="Delete";
+    rm.onclick=async()=>{if(!rm.dataset.c){rm.dataset.c=1;rm.textContent="Tap again to delete";return;}await call("delete",{id:it.id});start();};
+    r2.append(dl,cp,rm);g.append(r,r2);row.append(box,g);list.append(row);
+  });
+}
+start();
 </script></body></html>
