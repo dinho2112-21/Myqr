@@ -1,79 +1,197 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Developer</title><meta name="robots" content="noindex">
-<style>:root{--bg:#f6f7f9;--cd:#fff;--tx:#14171f;--mu:#667085;--bd:#e2e5ea;--ac:#4f46e5}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--cd:#181b22;--tx:#eceef3;--mu:#98a1b3;--bd:#2a2f3a;--ac:#818cf8}}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:24px 16px}
-.card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:16px}
-input{padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;width:100%;box-sizing:border-box}
-button{padding:10px 16px;border:0;border-radius:10px;background:var(--ac);color:#fff;font-weight:600;cursor:pointer}
-button.g{background:none;color:var(--mu);border:1px solid var(--bd);padding:6px 12px;font-weight:500}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.item{display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--bd)}
-.qr{background:#fff;padding:6px;border-radius:8px;line-height:0;flex:none;height:min-content}.grow{flex:1;min-width:0;word-break:break-all;font-size:.9rem}.mu{color:var(--mu)}.er{color:#c2410c;min-height:1.2em}</style></head>
-<body><main id="app"></main>
+<title>Developer dashboard</title><meta name="robots" content="noindex">
+<style>
+:root{--bg:#f4f5f8;--cd:#fff;--tx:#12151c;--mu:#667085;--bd:#e4e7ec;--ac:#4f46e5;--acx:#fff;--ok:#0f7b55;--oks:#e4f6ee;--wt:#b45309;--wts:#fef3e2;--ps:#eceef2;--er:#c2410c;--sh:0 1px 2px rgba(16,24,40,.05)}
+@media(prefers-color-scheme:dark){:root{--bg:#0d0f14;--cd:#171a21;--tx:#eceef3;--mu:#98a1b3;--bd:#272c37;--ac:#8b93ff;--acx:#0d0f14;--ok:#4ade80;--oks:#12301f;--wt:#fbbf24;--wts:#33270c;--ps:#262a35;--er:#fb923c;--sh:none}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{background:var(--cd);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5}
+.top>div{max-width:980px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:8px}
+.logo{font-weight:800;font-size:1.1rem;letter-spacing:-.02em;flex:1}.logo i{font-style:normal;color:var(--ac)}
+main{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.45rem;margin:0 0 2px;letter-spacing:-.02em}h2{font-size:1.05rem;margin:0 0 4px}h3{font-size:1rem;margin:0}
+.mu{color:var(--mu)}.err{color:var(--er);min-height:1.3em;margin-top:8px;font-size:.9rem}.sm-t{font-size:.85rem}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:18px;box-shadow:var(--sh)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:18px 0 12px}
+.stat{padding:14px 16px}.stat b{display:block;font-size:1.6rem;line-height:1.2;letter-spacing:-.02em}.stat span{color:var(--mu);font-size:.8rem}
+input,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+input:focus,select:focus{outline:2px solid var(--ac);outline-offset:-1px}
+.btn{padding:10px 16px;border-radius:10px;border:1px solid var(--bd);background:var(--cd);color:var(--tx);font:600 .9rem inherit;cursor:pointer}
+.btn.primary{background:var(--ac);border-color:var(--ac);color:var(--acx)}.btn.sm{padding:6px 12px;font-weight:500;font-size:.85rem}.btn.danger{color:var(--er)}.btn:disabled{opacity:.6;cursor:wait}
+.chart{margin-bottom:12px;color:var(--ac)}.chart svg{width:100%;height:84px;display:block}
+.chart .cap{display:flex;justify-content:space-between;font-size:.75rem;color:var(--mu);margin-top:4px}
+.create{display:grid;grid-template-columns:1fr 1.4fr auto;gap:10px;align-items:end;margin-top:12px}
+.create label,.lbl{font-size:.8rem;color:var(--mu);display:block;margin-bottom:4px}
+@media(max-width:700px){.create{grid-template-columns:1fr}}
+.bar{display:flex;gap:10px;align-items:center;margin:24px 0 12px;flex-wrap:wrap}.bar h2{margin:0;flex:1;min-width:140px}.bar>*:not(h2){width:auto}.bar input{width:200px}
+.list{display:grid;gap:12px}
+.item{display:flex;gap:16px;align-items:flex-start}
+.qr{background:#fff;padding:8px;border-radius:10px;line-height:0;flex:none;border:1px solid var(--bd)}
+.body{flex:1;min-width:0}.head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:99px}
+.badge.ok{background:var(--oks);color:var(--ok)}.badge.wt{background:var(--wts);color:var(--wt)}.badge.ps{background:var(--ps);color:var(--mu)}
+.dest{margin:6px 0 2px;font-size:.9rem;word-break:break-all}.meta{color:var(--mu);font-size:.82rem}
+.spark{display:flex;align-items:flex-end;gap:12px;margin-top:8px;color:var(--ac);font-size:.78rem}.spark svg{width:112px;height:28px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.edit{display:grid;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)}
+.empty{text-align:center;padding:36px 12px;color:var(--mu)}
+.panel{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:700px){.panel{grid-template-columns:1fr}}
+.panel .row{display:grid;gap:8px;margin-top:8px}
+.gate{max-width:400px;margin:8vh auto 0;padding:0 16px}.gate .logo{text-align:center;margin-bottom:16px;font-size:1.4rem}
+.gate input{margin-top:10px}.gate .btn.primary{width:100%;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:.9rem;z-index:9;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+@media(max-width:520px){.item{flex-direction:column}}
+</style></head>
+<body><div id="app"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const app=document.getElementById("app");
-const $=id=>document.getElementById(id);
 const T=()=>sessionStorage.getItem("qrtok")||"";
 const call=async(path,body)=>{
   const r=await fetch("/api/admin/"+path,{method:body?"POST":"GET",headers:{"x-admin-token":T(),"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
   let j={};try{j=await r.json();}catch(e){} j._s=r.status;return j;};
-const when=t=>t?new Date(t).toLocaleString():"none yet";
+const h=(t,p,...k)=>{const e=document.createElement(t);for(const x in (p||{})){if(x==="class")e.className=p[x];else if(x.startsWith("on"))e[x]=p[x];else e.setAttribute(x,p[x]);}k.flat().forEach(c=>e.append(c&&c.nodeType?c:document.createTextNode(c==null?"":c)));return e;};
+const fmt=t=>t?new Date(t).toLocaleString([],{dateStyle:"medium",timeStyle:"short"}):"—";
+const toast=m=>{const t=h("div",{class:"toast"},m);document.body.append(t);setTimeout(()=>t.remove(),2200);};
+const dk=t=>new Date(t).toISOString().slice(0,10);
+const lastDays=n=>Array.from({length:n},(_,i)=>dk(Date.now()-(n-1-i)*864e5));
+const bars=(vals,w,hh)=>{const mx=Math.max(1,...vals),bw=w/vals.length;
+  return '<svg viewBox="0 0 '+w+' '+hh+'" preserveAspectRatio="none">'+vals.map((v,i)=>{const bh=Math.max(v?3:2,v/mx*hh);
+  return '<rect x="'+(i*bw+bw*.12)+'" y="'+(hh-bh)+'" width="'+bw*.76+'" height="'+bh+'" rx="2" fill="currentColor" opacity="'+(v?.9:.22)+'"/>';}).join("")+'</svg>';};
+const svg=s=>{const e=h("span");e.innerHTML=s;return e.firstChild;};
 
 async function start(){
   if(T()){const l=await call("list");if(l.items)return dash(l);}
   const s=await call("status");
-  if(!s.setup)return setup();
-  login();
+  gate(s.setup?"login":"setup");
 }
 
-function setup(err){
-  app.innerHTML='<div class="card"><h2>Create your developer password</h2><p class="mu">Do this once. Afterwards this page always asks for it.</p><input id="p1" type="password" placeholder="New password (8+ characters)"><div class="row"><input id="p2" type="password" placeholder="Repeat password"></div><div class="row"><button id="b">Save password</button></div><p class="er">'+(err||"")+'</p></div>';
-  $("b").onclick=async()=>{
-    const a=$("p1").value,b=$("p2").value;
-    if(a.length<8)return setup("Use at least 8 characters");
-    if(a!==b)return setup("Passwords don’t match");
-    const j=await call("setup",{password:a});
-    if(j.token){sessionStorage.setItem("qrtok",j.token);start();}else setup("Could not save the password");
-  };
-}
-
-function login(err){
-  app.innerHTML='<div class="card"><h2>Developer login</h2><input id="p" type="password" placeholder="Password"><div class="row"><button id="b">Log in</button></div><p class="er">'+(err||"")+'</p></div>';
+function gate(mode,err){
+  const setup=mode==="setup";
+  const p1=h("input",{type:"password",placeholder:setup?"New password (8+ characters)":"Password",autocomplete:setup?"new-password":"current-password"});
+  const p2=setup?h("input",{type:"password",placeholder:"Repeat password",autocomplete:"new-password"}):null;
+  const msg=h("div",{class:"err"},err||"");
+  const btn=h("button",{class:"btn primary"},setup?"Save password":"Log in");
   const go=async()=>{
-    const j=await call("login",{password:$("p").value});
-    if(j.token){sessionStorage.setItem("qrtok",j.token);start();}
-    else login(j._s===429?"Too many tries. Wait 15 minutes.":"Wrong password");
+    msg.textContent="";
+    if(setup){if(p1.value.length<8)return msg.textContent="Use at least 8 characters.";if(p1.value!==p2.value)return msg.textContent="Passwords don’t match.";}
+    btn.disabled=true;
+    const j=await call(setup?"setup":"login",{password:p1.value});
+    if(j.token){sessionStorage.setItem("qrtok",j.token);return start();}
+    btn.disabled=false;
+    msg.textContent=j._s===429?"Too many tries. Wait 15 minutes.":setup?"Could not save the password.":"Wrong password.";
   };
-  $("b").onclick=go;$("p").onkeydown=e=>{if(e.key==="Enter")go();};
+  btn.onclick=go;[p1,p2].forEach(i=>i&&(i.onkeydown=e=>{if(e.key==="Enter")go();}));
+  app.replaceChildren(h("div",{class:"gate"},h("div",{class:"logo"},"QR ",h("i",{},"Gate")),
+    h("div",{class:"card"},h("h2",{},setup?"Create your developer password":"Developer login"),
+    h("p",{class:"mu",style:"margin:0 0 6px"},setup?"Set this once. After that, this page always asks for it.":"Enter your password to continue."),p1,p2,btn,msg)));
 }
+
+let data=null,query="",filter="all",sort="new",statsEl,chartEl,listEl;
 
 function dash(l){
-  const items=l.items;
-  app.innerHTML='<h1>Developer dashboard</h1><div class="card"><div class="row" style="margin-top:0"><button id="new">Generate new QR</button><button class="g" id="out">Log out</button><span class="mu">'+items.length+' QR codes</span></div><p class="mu" style="margin:10px 0 0">Total logins: <b>'+l.logins+'</b> · Previous login: '+when(l.prevLogin)+'</p></div><div class="card" id="list"></div>';
-  $("new").onclick=async()=>{const j=await call("create",{});if(j.id){start();}else{alert("Could not create QR. Error "+j._s+": "+(j.error||j.message||"no details"));}};
-  $("out").onclick=()=>{sessionStorage.removeItem("qrtok");login();};
-  const list=$("list");if(!items.length)list.textContent="No QR codes yet.";
-  items.forEach(it=>{
-    const link=location.origin+"/q/"+it.id,row=document.createElement("div");row.className="item";
-    const box=document.createElement("div");box.className="qr";new QRCode(box,{text:link,width:112,height:112});
-    const g=document.createElement("div");g.className="grow";
-    g.innerHTML="<b>QR "+it.id+"</b> <span class='mu'>"+(it.dest?"Linked":"Waiting for first scan")+"</span><div class='mu'></div><div class='mu'></div>";
-    g.children[2].textContent=it.dest?"Goes to: "+it.dest:"No destination yet";
-    g.children[3].textContent=(it.scans||0)+" scans · last scan: "+(it.lastScan?new Date(it.lastScan).toLocaleString():"never");
-    const r=document.createElement("div");r.className="row";
-    const inp=document.createElement("input");inp.type="url";inp.value=it.dest||"";inp.placeholder="Set or change destination";inp.style.flex="1";
-    const up=document.createElement("button");up.className="g";up.textContent="Update link";
-    up.onclick=async()=>{const j=await call("update",{id:it.id,dest:inp.value});j.ok?start():alert("Invalid link");};
-    r.append(inp,up);
-    const r2=document.createElement("div");r2.className="row";
-    const dl=document.createElement("button");dl.className="g";dl.textContent="Download PNG";
-    dl.onclick=()=>{const a=document.createElement("a");a.href=box.querySelector("canvas").toDataURL();a.download="qr-"+it.id+".png";a.click();};
-    const cp=document.createElement("button");cp.className="g";cp.textContent="Copy link";cp.onclick=()=>navigator.clipboard.writeText(link);
-    const rm=document.createElement("button");rm.className="g";rm.textContent="Delete";
-    rm.onclick=async()=>{if(!rm.dataset.c){rm.dataset.c=1;rm.textContent="Tap again to delete";return;}await call("delete",{id:it.id});start();};
-    r2.append(dl,cp,rm);g.append(r,r2);row.append(box,g);list.append(row);
-  });
+  data=l;
+  const title=h("input",{placeholder:"e.g. Table 5 review",maxlength:"80"});
+  const dest=h("input",{type:"url",placeholder:"https://… (optional)"});
+  const add=h("button",{class:"btn primary"},"Create QR");
+  add.onclick=async()=>{add.disabled=true;const j=await call("create",{title:title.value,dest:dest.value});add.disabled=false;
+    if(j.id){title.value="";dest.value="";toast("QR created");refresh();}else toast(j.error==="invalid"?"That link isn’t valid":"Could not create QR");};
+
+  const search=h("input",{type:"search",placeholder:"Search…"});search.oninput=()=>{query=search.value.toLowerCase();renderList();};
+  const fsel=h("select",{},...[["all","All"],["linked","Linked"],["waiting","Waiting"],["paused","Paused"]].map(([v,t])=>h("option",{value:v},t)));
+  fsel.onchange=()=>{filter=fsel.value;renderList();};
+  const ssel=h("select",{},...[["new","Newest"],["scans","Most scans"],["name","Name A–Z"]].map(([v,t])=>h("option",{value:v},t)));
+  ssel.onchange=()=>{sort=ssel.value;renderList();};
+
+  /* settings panel */
+  const brand=h("input",{value:l.brand,maxlength:"40"});
+  const bs=h("button",{class:"btn sm"},"Save name");
+  bs.onclick=async()=>{const j=await call("settings",{brand:brand.value});if(j.ok){data.brand=j.brand;brandEl.textContent=j.brand;toast("Brand name saved");}else toast("Could not save");};
+  const cur=h("input",{type:"password",placeholder:"Current password",autocomplete:"current-password"});
+  const nw=h("input",{type:"password",placeholder:"New password (8+ characters)",autocomplete:"new-password"});
+  const ps=h("button",{class:"btn sm"},"Change password");
+  ps.onclick=async()=>{const j=await call("password",{current:cur.value,next:nw.value});
+    if(j.token){sessionStorage.setItem("qrtok",j.token);cur.value=nw.value="";toast("Password changed");}
+    else toast(j.error==="short"?"Use at least 8 characters":"Current password is wrong");};
+  const panel=h("div",{class:"card",hidden:""},h("h2",{},"Settings"),h("div",{class:"panel"},
+    h("div",{},h("div",{class:"lbl"},"Name shown on scanner pages"),h("div",{class:"row"},brand,h("div",{},bs))),
+    h("div",{},h("div",{class:"lbl"},"Change password"),h("div",{class:"row"},cur,nw,h("div",{},ps)))));
+  const sb=h("button",{class:"btn sm"},"Settings");sb.onclick=()=>{panel.hidden=!panel.hidden;};
+  const eb=h("button",{class:"btn sm"},"Export CSV");eb.onclick=exportCsv;
+  const out=h("button",{class:"btn sm"},"Log out");out.onclick=()=>{sessionStorage.removeItem("qrtok");gate("login");};
+  const brandEl=h("span",{},l.brand);
+
+  statsEl=h("div",{class:"stats"});chartEl=h("div",{class:"card chart"});listEl=h("div",{class:"list"});
+  app.replaceChildren(
+    h("div",{class:"top"},h("div",{},h("div",{class:"logo"},brandEl),sb,eb,out)),
+    h("main",{},h("h1",{},"Developer dashboard"),h("div",{class:"mu"},"Last login: "+fmt(l.prevLogin)),statsEl,chartEl,panel,
+      h("div",{class:"card",style:"margin-top:12px"},h("h2",{},"Create a new QR"),
+        h("div",{class:"mu sm-t"},"Leave the link empty and the first scanner sets it. Add a link to lock it to your site from the start."),
+        h("div",{class:"create"},h("div",{},h("label",{},"Title"),title),h("div",{},h("label",{},"Destination link"),dest),add)),
+      h("div",{class:"bar"},h("h2",{},"Your QR codes"),search,fsel,ssel),listEl));
+  paint();
+}
+
+async function refresh(){const l=await call("list");if(l.items){data=Object.assign(data,l);paint();}else start();}
+
+function paint(){
+  const it=data.items,days=lastDays(14),today=dk(Date.now());
+  const scans=it.reduce((a,b)=>a+(b.scans||0),0),linked=it.filter(x=>x.dest).length;
+  const todayN=it.reduce((a,b)=>a+((b.days||{})[today]||0),0);
+  statsEl.replaceChildren(...[["QR codes",it.length],["Linked",linked],["Waiting",it.length-linked],["Total scans",scans],["Scans today",todayN],["Total logins",data.logins]]
+    .map(([k,v])=>h("div",{class:"card stat"},h("b",{},v),h("span",{},k))));
+  const series=days.map(d=>it.reduce((a,b)=>a+((b.days||{})[d]||0),0));
+  chartEl.replaceChildren(h("h2",{},"Scans, last 14 days"),svg(bars(series,280,84)),
+    h("div",{class:"cap"},h("span",{},days[0].slice(5)),h("span",{},series.reduce((a,b)=>a+b,0)+" scans"),h("span",{},days[13].slice(5))));
+  renderList();
+}
+
+function exportCsv(){
+  const q=s=>'"'+String(s==null?"":s).replace(/"/g,'""')+'"';
+  const rows=[["Title","ID","QR link","Destination","Status","Scans","Last scan","Created"]].concat(data.items.map(i=>
+    [i.title||"Untitled QR",i.id,location.origin+"/q/"+i.id,i.dest||"",i.paused?"Paused":i.dest?"Linked":"Waiting",i.scans||0,i.lastScan?new Date(i.lastScan).toISOString():"",i.createdAt?new Date(i.createdAt).toISOString():""]));
+  const a=h("a",{href:URL.createObjectURL(new Blob([rows.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"})),download:"qr-codes.csv"});a.click();toast("CSV downloaded");
+}
+
+function dlPng(it,link){
+  const t=h("div");new QRCode(t,{text:link,width:640,height:640,correctLevel:QRCode.CorrectLevel.M});
+  const c=t.querySelector("canvas"),p=document.createElement("canvas");p.width=p.height=720;
+  const x=p.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,720,720);x.drawImage(c,40,40);
+  h("a",{href:p.toDataURL("image/png"),download:(it.title||"qr").replace(/[^\w-]+/g,"_")+"-"+it.id+".png"}).click();
+}
+
+function renderList(){
+  let items=data.items.filter(i=>{
+    if(query&&!((i.title||"")+" "+i.id+" "+(i.dest||"")).toLowerCase().includes(query))return false;
+    if(filter==="linked")return i.dest&&!i.paused;if(filter==="waiting")return !i.dest;if(filter==="paused")return i.paused;return true;});
+  if(sort==="scans")items.sort((a,b)=>(b.scans||0)-(a.scans||0));
+  if(sort==="name")items.sort((a,b)=>(a.title||"").localeCompare(b.title||""));
+  if(!items.length)return listEl.replaceChildren(h("div",{class:"card empty"},data.items.length?"No QR codes match.":"No QR codes yet. Create your first one above."));
+  const days=lastDays(14);
+  listEl.replaceChildren(...items.map(it=>{
+    const link=location.origin+"/q/"+it.id,box=h("div",{class:"qr"});
+    new QRCode(box,{text:link,width:116,height:116,correctLevel:QRCode.CorrectLevel.M});
+    const ti=h("input",{value:it.title||"",placeholder:"Title",maxlength:"80"});
+    const de=h("input",{type:"url",value:it.dest||"",placeholder:"Destination link (empty = next scanner sets it)"});
+    const sv=h("button",{class:"btn primary sm"},"Save changes");
+    sv.onclick=async()=>{const j=await call("update",{id:it.id,title:ti.value,dest:de.value});if(j.ok){toast("Saved");refresh();}else toast("That link isn’t valid");};
+    const edit=h("div",{class:"edit",hidden:""},ti,de,h("div",{},sv));
+    const eb=h("button",{class:"btn sm"},"Edit");eb.onclick=()=>{edit.hidden=!edit.hidden;};
+    const pb=h("button",{class:"btn sm"},it.paused?"Resume":"Pause");
+    pb.onclick=async()=>{await call("update",{id:it.id,paused:!it.paused});toast(it.paused?"Resumed":"Paused");refresh();};
+    const rm=h("button",{class:"btn sm danger"},"Delete");
+    rm.onclick=async()=>{if(!rm.dataset.c){rm.dataset.c=1;rm.textContent="Tap again to delete";setTimeout(()=>{delete rm.dataset.c;rm.textContent="Delete";},3500);return;}await call("delete",{id:it.id});toast("Deleted");refresh();};
+    const cp=h("button",{class:"btn sm"},"Copy link");cp.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied");};
+    const dl=h("button",{class:"btn sm"},"Download PNG");dl.onclick=()=>dlPng(it,link);
+    const dv=it.dev||{mobile:0,desktop:0};
+    const status=it.paused?["ps","Paused"]:it.dest?["ok","Linked"]:["wt","Waiting for first scan"];
+    return h("div",{class:"card item"},box,h("div",{class:"body"},
+      h("div",{class:"head"},h("h3",{},it.title||"Untitled QR"),h("span",{class:"badge "+status[0]},status[1])),
+      h("div",{class:"dest"},it.dest?"→ "+it.dest:"No destination yet"),
+      h("div",{class:"meta"},(it.scans||0)+" scans · last scan "+(it.lastScan?fmt(it.lastScan):"never")+" · created "+fmt(it.createdAt)),
+      h("div",{class:"spark"},svg(bars(days.map(d=>(it.days||{})[d]||0),112,28)),h("span",{class:"mu"},dv.mobile+" mobile · "+dv.desktop+" desktop")),
+      h("div",{class:"acts"},eb,pb,dl,cp,rm),edit));
+  }));
 }
 start();
 </script></body></html>
