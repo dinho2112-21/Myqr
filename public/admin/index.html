@@ -21,9 +21,9 @@ const call=async(path,body)=>{
 const when=t=>t?new Date(t).toLocaleString():"none yet";
 
 async function start(){
+  if(T()){const l=await call("list");if(l.items)return dash(l);}
   const s=await call("status");
   if(!s.setup)return setup();
-  if(T()){const l=await call("list");if(l.items)return dash(l);}
   login();
 }
 
