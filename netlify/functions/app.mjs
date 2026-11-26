@@ -5,6 +5,7 @@ const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, header
 const html = (b, s = 200) => new Response(b, { status: s, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 const okUrl = (s) => { try { const u = new URL(s); return /^https?:$/.test(u.protocol) ? u.href : null; } catch { return null; } };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const dayKey = (t = Date.now()) => new Date(t).toISOString().slice(0, 10);
 
 const enc = new TextEncoder();
 const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -24,36 +25,62 @@ const checkToken = async (admin, t) => {
   return same(sig, await hmac(admin.hash, exp));
 };
 
-const page = (body, head = "") => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review</title>${head}
-<style>body{font-family:system-ui,sans-serif;background:#f6f7f9;color:#14171f;margin:0;display:grid;place-items:center;min-height:100vh;padding:16px}
-.c{background:#fff;border:1px solid #e2e5ea;border-radius:14px;padding:22px;max-width:440px;width:100%}
-input{width:100%;padding:12px;border:1px solid #ccd;border-radius:10px;font:inherit;box-sizing:border-box}
-button,a.b{display:inline-block;margin-top:12px;padding:11px 18px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font:600 1rem system-ui;text-decoration:none;cursor:pointer}
-p{color:#667085}@media(prefers-color-scheme:dark){body{background:#0f1115;color:#eceef3}.c{background:#181b22;border-color:#2a2f3a}input{background:#0f1115;color:#eceef3;border-color:#2a2f3a}}</style></head><body><div class="c">${body}</div></body></html>`;
+const page = (brand, body, head = "") => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(brand)}</title>${head}
+<style>
+:root{--bg:#f4f5f8;--cd:#fff;--tx:#12151c;--mu:#667085;--bd:#e4e7ec;--ac:#4f46e5;--g1:#e6e8ff;--er:#c2410c}
+@media(prefers-color-scheme:dark){:root{--bg:#0d0f14;--cd:#171a21;--tx:#eceef3;--mu:#98a1b3;--bd:#272c37;--ac:#8b93ff;--g1:#1b1f3d;--er:#fb923c}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:radial-gradient(900px 480px at 50% -10%,var(--g1),transparent),var(--bg)}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:20px;padding:28px 24px;max-width:420px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(20,20,60,.08)}
+.mark{width:54px;height:54px;border-radius:16px;background:var(--ac);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:800;margin:0 auto 14px}
+@media(prefers-color-scheme:dark){.mark{color:#0d0f14}}
+.brand{font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:14px}
+h2{margin:0 0 6px;font-size:1.35rem;letter-spacing:-.02em}p{margin:0 0 14px;color:var(--mu)}
+input{width:100%;padding:13px 14px;border:1px solid var(--bd);border-radius:12px;font:inherit;background:var(--bg);color:var(--tx)}
+input:focus{outline:2px solid var(--ac);outline-offset:-1px}
+button,a.b{display:block;width:100%;margin-top:12px;padding:13px 18px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:700 1rem system-ui;text-decoration:none;cursor:pointer}
+@media(prefers-color-scheme:dark){button,a.b{color:#0d0f14}}
+button:disabled{opacity:.6}
+.sp{width:26px;height:26px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:s .9s linear infinite;margin:16px auto 8px}
+@keyframes s{to{transform:rotate(360deg)}}
+.er{color:var(--er);min-height:1.3em;margin:8px 0 0;font-size:.9rem}.foot{margin-top:18px;font-size:.75rem;color:var(--mu)}
+</style></head><body><div class="c"><div class="mark">${esc(brand.trim().charAt(0).toUpperCase() || "Q")}</div><div class="brand">${esc(brand)}</div>${body}</div></body></html>`;
 
 const handler = async (req) => {
   const url = new URL(req.url);
   const parts = url.pathname.split("/").filter(Boolean);
   const store = getStore({ name: "qrs", consistency: "strong" });
+  const cfg = getStore({ name: "config", consistency: "strong" });
 
   /* ---- Public QR page: only redirects or asks for the destination. Never touches admin. ---- */
   if (parts[0] === "q") {
     const id = parts[1] || "";
-    const rec = ID.test(id) ? await store.get(id, { type: "json" }) : null;
-    if (!rec) return html(page("<h2>Unknown QR code</h2>"), 404);
+    const [rec, st] = await Promise.all([ID.test(id) ? store.get(id, { type: "json" }) : null, cfg.get("settings", { type: "json" })]);
+    const brand = (st && st.brand) || "QR Gate";
+    if (!rec) return html(page(brand, "<h2>QR code not found</h2><p>This code isn’t registered or has been removed.</p>"), 404);
+    if (rec.paused) return html(page(brand, "<h2>Temporarily unavailable</h2><p>This QR code is paused right now. Please try again later.</p>"));
     if (rec.dest) {
+      const ua = req.headers.get("user-agent") || "";
       rec.scans = (rec.scans || 0) + 1; rec.lastScan = Date.now();
+      rec.days = rec.days || {}; const dk = dayKey(); rec.days[dk] = (rec.days[dk] || 0) + 1;
+      const ks = Object.keys(rec.days).sort(); while (ks.length > 30) delete rec.days[ks.shift()];
+      rec.dev = rec.dev || { mobile: 0, desktop: 0 }; rec.dev[/mobile|android|iphone|ipad/i.test(ua) ? "mobile" : "desktop"]++;
       await store.setJSON(id, rec);
       const d = esc(rec.dest);
-      return html(page(`<h2>Opening review page…</h2><p>If it doesn’t open automatically, tap Review now.</p><a class="b" href="${d}">Review now</a>
-<script>location.replace(${JSON.stringify(rec.dest).replace(/</g, "\\u003c")})</script>`, `<meta http-equiv="refresh" content="1;url=${d}">`));
+      return html(page(brand, `<h2>Opening review page…</h2><div class="sp"></div><p>If it doesn’t open automatically, tap below.</p><a class="b" href="${d}">Review now</a>
+<script>setTimeout(function(){location.replace(${JSON.stringify(rec.dest).replace(/</g, "\\u003c")})},150)</script>`, `<meta http-equiv="refresh" content="2;url=${d}">`));
     }
-    return html(page(`<h2>Where should this QR go?</h2><p>Paste the destination link once. This QR will open it every time after.</p>
-<input id="u" type="url" placeholder="https://example.com" autocomplete="off"><button id="s">Save &amp; review</button><p id="m" style="color:#c2410c"></p>
+    return html(page(brand, `<h2>${esc(rec.title || "Set up this QR")}</h2><p>Paste the link this QR should open. You only do this once, and it will open it every time after.</p>
+<input id="u" type="url" inputmode="url" placeholder="https://example.com" autocomplete="off"><button id="s">Save &amp; review</button><div class="er" id="m"></div>
 <script>
-document.getElementById("s").onclick=async()=>{const m=document.getElementById("m");m.textContent="";
-const r=await fetch("/api/set/${id}",{method:"POST",body:JSON.stringify({dest:document.getElementById("u").value.trim()})});
-const j=await r.json();if(j.dest)location.replace("/q/${id}");else m.textContent="Enter a full link starting with https://";};
+var b=document.getElementById("s"),m=document.getElementById("m"),u=document.getElementById("u");
+async function go(){m.textContent="";var v=u.value.trim();if(v&&!/^https?:/i.test(v))v="https://"+v;
+b.disabled=true;b.textContent="Saving…";
+try{var r=await fetch("/api/set/${id}",{method:"POST",body:JSON.stringify({dest:v})});var j=await r.json();
+if(j.dest){location.replace("/q/${id}");return;}m.textContent="Please enter a valid website link.";}
+catch(e){m.textContent="Couldn’t save. Check your connection and try again.";}
+b.disabled=false;b.textContent="Save & review";}
+b.onclick=go;u.onkeydown=function(e){if(e.key==="Enter")go();};
 </script>`));
   }
 
@@ -74,7 +101,6 @@ const j=await r.json();if(j.dest)location.replace("/q/${id}");else m.textContent
 
   /* ---- Developer API ---- */
   if (parts[1] === "admin") {
-    const cfg = getStore({ name: "config", consistency: "strong" });
     const admin = await cfg.get("admin", { type: "json" });
     const act = parts[2];
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
@@ -110,14 +136,31 @@ const j=await r.json();if(j.dest)location.replace("/q/${id}");else m.textContent
     if (!(await checkToken(admin, req.headers.get("x-admin-token") || ""))) return json({ error: "unauthorized" }, 401);
 
     if (act === "list") {
-      const { blobs } = await store.list();
+      const [{ blobs }, st] = await Promise.all([store.list(), cfg.get("settings", { type: "json" })]);
       const items = await Promise.all(blobs.map(async (b) => ({ id: b.key, ...(await store.get(b.key, { type: "json" })) })));
       items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      return json({ items, logins: admin.logins, lastLogin: admin.lastLogin, prevLogin: admin.prevLogin });
+      return json({ items, brand: (st && st.brand) || "QR Gate", logins: admin.logins, lastLogin: admin.lastLogin, prevLogin: admin.prevLogin });
     }
-    if (act === "create" && req.method === "POST") {
+    if (act === "settings") {
+      const brand = String(body.brand || "").trim().slice(0, 40) || "QR Gate";
+      await cfg.setJSON("settings", { brand });
+      return json({ ok: true, brand });
+    }
+    if (act === "password") {
+      const next = String(body.next || "");
+      if (next.length < 8) return json({ error: "short" }, 400);
+      if (!same(await hashPw(String(body.current || ""), admin.salt), admin.hash)) return json({ error: "wrong" }, 401);
+      admin.salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+      admin.hash = await hashPw(next, admin.salt);
+      await cfg.setJSON("admin", admin);
+      return json({ token: await makeToken(admin) });
+    }
+    if (act === "create") {
       const id = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
-      await store.setJSON(id, { createdAt: Date.now(), dest: null, scans: 0, lastScan: null });
+      const t = String(body.title || "").trim().slice(0, 80) || "Untitled QR";
+      const d = body.dest ? okUrl(String(body.dest).trim()) : null;
+      if (body.dest && !d) return json({ error: "invalid" }, 400);
+      await store.setJSON(id, { title: t, createdAt: Date.now(), dest: d, linkedAt: d ? Date.now() : null, scans: 0, lastScan: null, paused: false, days: {}, dev: { mobile: 0, desktop: 0 } });
       return json({ id });
     }
     const id = body.id || "";
@@ -125,10 +168,14 @@ const j=await r.json();if(j.dest)location.replace("/q/${id}");else m.textContent
     if (act === "update") {
       const rec = await store.get(id, { type: "json" });
       if (!rec) return json({ error: "unknown" }, 404);
-      const v = (body.dest || "").trim();
-      const u = v ? okUrl(v) : null;
-      if (v && !u) return json({ error: "invalid" }, 400);
-      rec.dest = u; await store.setJSON(id, rec);
+      if (typeof body.dest === "string") {
+        const v = body.dest.trim(), u = v ? okUrl(v) : null;
+        if (v && !u) return json({ error: "invalid" }, 400);
+        rec.dest = u;
+      }
+      if (typeof body.title === "string") rec.title = body.title.trim().slice(0, 80) || "Untitled QR";
+      if (typeof body.paused === "boolean") rec.paused = body.paused;
+      await store.setJSON(id, rec);
       return json({ ok: true });
     }
     if (act === "delete") { await store.delete(id); return json({ ok: true }); }
